@@ -34,6 +34,7 @@ public class QRCodeFinderOrig {
 	static String filename;
 	static int SCALE = 4;
 	static Graphics2D g2d;
+	static TextPosition texts;
 
 	public static void main(String[] args) throws IOException {
 
@@ -58,13 +59,11 @@ public class QRCodeFinderOrig {
 	private static void addRect() throws IOException {
 
 		// Loading an existing document
-		File file = new File("./res/qrcode/H88-MA-E-2430150_A.pdf");
+		File file = new File("./res/qrcode/H88-MA-E-2430154_A.pdf");
 		PDDocument document = PDDocument.load(file);
 
 		// Retrieving a page of the PDF Document
 		PDPage page = document.getPage(0);
-
-		PDImageXObject pdImage = PDImageXObject.createFromFile("./res/qrcode/qrcode.PNG", document);
 
 		PDFTextStripper tStripper = new PDFTextStripper() {
 
@@ -73,14 +72,11 @@ public class QRCodeFinderOrig {
 
 				try {
 					int fromIndex = 0;
-					TextPosition texts;
+					
 					String search = "{QRCODE}";
 
 					while ((fromIndex = string.indexOf(search, fromIndex)) != -1) {
 						texts = textPositions.get(fromIndex);
-						x = texts.getXDirAdj();
-						y = texts.getYDirAdj();
-						System.out.println("Placeholder coordinates X: " + x + ", Y :" + y);
 						break;
 					}
 				} catch (NullPointerException e) {
@@ -94,23 +90,25 @@ public class QRCodeFinderOrig {
 		tStripper.setStartPage(0);
 		tStripper.setEndPage(1);
 		tStripper.getText(document);
+
+		// This retrieves the correct coordinates for the text
+		PDRectangle cropBox = page.getCropBox();
+        float x = texts.getTextMatrix().getTranslateX() + cropBox.getLowerLeftX();
+        float y = texts.getTextMatrix().getTranslateY() + cropBox.getLowerLeftY();
 		
-		PDRectangle mediaBox = page.getMediaBox();
+        // This must be changed accordingly to the QRCode image size
+		y = (float) (y - (30 / 2)) ;
 		
-		x = (float) (x * 1.1);
-		y = (float) (y * 1.1);
-		
-		x = (float) x;
-		y = (float) (mediaBox.getHeight() - y - (20 / 2));
+		System.out.println("Placeholder coordinates X: " + x + ", Y :" + y);
 
 		// Instantiating the PDPageContentStream class
-		PDPageContentStream contentStream = new PDPageContentStream(document, page, true, true);
+		PDPageContentStream contentStream = new PDPageContentStream(document, page, true, true, true);
 
 		// Setting the non stroking color
 		contentStream.setNonStrokingColor(Color.DARK_GRAY);
 
 		// Drawing a rectangle
-		contentStream.addRect(x, y, 40, 40);
+		contentStream.addRect(x, y, 50, 50);
 
 		// Drawing a rectangle
 		contentStream.fill();
@@ -121,7 +119,7 @@ public class QRCodeFinderOrig {
 		contentStream.close();
 
 		// Saving the document
-		File file1 = new File("./res/qrcode/H88-MA-E-2430150_A_2.pdf");
+		File file1 = new File("./res/qrcode/H88-MA-E-2430154_A_2.pdf");
 		document.save(file1);
 
 		// Closing the document
